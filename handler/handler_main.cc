@@ -44,6 +44,7 @@
 #include "client/crashpad_info.h"
 #include "client/prune_crash_reports.h"
 #include "client/simple_string_dictionary.h"
+#include "handler/crash_report_report_tool.h"
 #include "handler/crash_report_upload_thread.h"
 #include "handler/prune_crash_reports_thread.h"
 #include "tools/tool_support.h"
@@ -212,6 +213,9 @@ void Usage(const base::FilePath& me) {
   // clang-format on
 #endif  // BUILDFLAG(IS_ANDROID)
       // clang-format off
+"      --report-tool=<tool path>\n"
+"                              run crash report tool\n"
+"                              dump file passed with `--dump` argument\n"
 "      --help                  display this help and exit\n"
 "      --version               output version information and exit\n",
           me.value().c_str());
@@ -256,6 +260,7 @@ struct Options {
 #if defined(ATTACHMENTS_SUPPORTED)
   std::vector<base::FilePath> attachments;
 #endif  // ATTACHMENTS_SUPPORTED
+  base::FilePath report_tool;
 };
 
 // Splits |key_value| on '=' and inserts the resulting key and value into |map|.
@@ -630,7 +635,7 @@ int HandlerMain(int argc,
 #if BUILDFLAG(IS_ANDROID)
     kOptionWriteMinidumpToLog,
 #endif  // BUILDFLAG(IS_ANDROID)
-
+    kOptionReportTool,
     // Standard options.
     kOptionHelp = -2,
     kOptionVersion = -3,
@@ -720,6 +725,7 @@ int HandlerMain(int argc,
 #if BUILDFLAG(IS_ANDROID)
     {"write-minidump-to-log", no_argument, nullptr, kOptionWriteMinidumpToLog},
 #endif  // BUILDFLAG(IS_ANDROID)
+    {"report-tool", required_argument, nullptr, kOptionReportTool},
     {"help", no_argument, nullptr, kOptionHelp},
     {"version", no_argument, nullptr, kOptionVersion},
     {nullptr, 0, nullptr, 0},
@@ -900,6 +906,11 @@ int HandlerMain(int argc,
         break;
       }
 #endif  // BUILDFLAG(IS_ANDROID)
+      case kOptionReportTool: {
+        options.report_tool = base::FilePath(
+            ToolSupport::CommandLineArgumentToFilePathStringType(optarg));
+        break;
+      }
       case kOptionHelp: {
         Usage(me);
         MetricsRecordExit(Metrics::LifetimeMilestone::kExitedEarly);
@@ -1016,6 +1027,16 @@ int HandlerMain(int argc,
     return ExitFailure();
   }
 
+  std::unique_ptr<CrashReportReportTool> ext_tool;
+
+  if (!options.report_tool.empty()) {
+    CrashReportReportTool::Options opts;
+
+    opts.tool = options.report_tool;
+
+    ext_tool = std::make_unique<CrashReportReportTool>(database.get(), opts);
+  }
+
   ScopedStoppable upload_thread;
   if (!options.url.empty()) {
     // TODO(scottmg): options.rate_limit should be removed when we have a
@@ -1069,6 +1090,7 @@ int HandlerMain(int argc,
   exception_handler = std::make_unique<CrashReportExceptionHandler>(
       database.get(),
       static_cast<CrashReportUploadThread*>(upload_thread.Get()),
+      ext_tool.get(),
       &options.annotations,
 #if defined(ATTACHMENTS_SUPPORTED)
       &options.attachments,
