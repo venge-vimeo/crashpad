@@ -22,6 +22,7 @@
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "client/settings.h"
+#include "handler/crash_report_report_tool.h"
 #include "handler/mac/file_limit_annotation.h"
 #include "minidump/minidump_file_writer.h"
 #include "minidump/minidump_user_extension_stream_data_source.h"
@@ -45,10 +46,12 @@ namespace crashpad {
 CrashReportExceptionHandler::CrashReportExceptionHandler(
     CrashReportDatabase* database,
     CrashReportUploadThread* upload_thread,
+    CrashReportReportTool* report_tool,
     const std::map<std::string, std::string>* process_annotations,
     const UserStreamDataSources* user_stream_data_sources)
     : database_(database),
       upload_thread_(upload_thread),
+      report_tool_(report_tool),
       process_annotations_(process_annotations),
       user_stream_data_sources_(user_stream_data_sources) {}
 
@@ -183,7 +186,9 @@ kern_return_t CrashReportExceptionHandler::CatchMachException(
       return KERN_FAILURE;
     }
 
-    if (upload_thread_) {
+    if (report_tool_) {
+      report_tool_->ReportPending(exception == kMachExceptionSimulated, uuid);
+    } else if (upload_thread_) {
       upload_thread_->ReportPending(uuid);
     }
   }

@@ -95,6 +95,8 @@ if (crashpad_is_android) {
 
 static_library("common") {
   sources = [
+    "crash_report_report_tool.cc",
+    "crash_report_report_tool.h",
     "crash_report_upload_thread.cc",
     "crash_report_upload_thread.h",
     "minidump_to_upload_parameters.cc",
