@@ -20,6 +20,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "client/crash_report_database.h"
 #include "client/settings.h"
+#include "handler/crash_report_report_tool.h"
 #include "handler/crash_report_upload_thread.h"
 #include "minidump/minidump_file_writer.h"
 #include "minidump/minidump_user_extension_stream_data_source.h"
@@ -36,11 +37,13 @@ namespace crashpad {
 CrashReportExceptionHandler::CrashReportExceptionHandler(
     CrashReportDatabase* database,
     CrashReportUploadThread* upload_thread,
+    CrashReportReportTool* report_tool,
     const std::map<std::string, std::string>* process_annotations,
     const std::vector<base::FilePath>* attachments,
     const UserStreamDataSources* user_stream_data_sources)
     : database_(database),
       upload_thread_(upload_thread),
+      report_tool_(report_tool),
       process_annotations_(process_annotations),
       attachments_(attachments),
       user_stream_data_sources_(user_stream_data_sources) {}
@@ -142,7 +145,12 @@ unsigned int CrashReportExceptionHandler::ExceptionHandlerServerException(
       return termination_code;
     }
 
-    if (upload_thread_) {
+    if (report_tool_) {
+      constexpr uint32_t kSimulatedExceptionCode = 0x517a7ed;
+
+      report_tool_->ReportPending(termination_code == kSimulatedExceptionCode,
+                                  uuid);
+    } else if (upload_thread_) {
       upload_thread_->ReportPending(uuid);
     }
   }

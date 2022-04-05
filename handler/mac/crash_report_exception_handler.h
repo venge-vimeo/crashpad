@@ -27,6 +27,8 @@
 
 namespace crashpad {
 
+class CrashReportReportTool;
+
 //! \brief An exception handler that writes crash reports for exception messages
 //!     to a CrashReportDatabase.
 class CrashReportExceptionHandler final
@@ -55,6 +57,7 @@ class CrashReportExceptionHandler final
   CrashReportExceptionHandler(
       CrashReportDatabase* database,
       CrashReportUploadThread* upload_thread,
+      CrashReportReportTool* report_tool,
       const std::map<std::string, std::string>* process_annotations,
       const UserStreamDataSources* user_stream_data_sources);
 
@@ -87,6 +90,7 @@ class CrashReportExceptionHandler final
  private:
   CrashReportDatabase* database_;  // weak
   CrashReportUploadThread* upload_thread_;  // weak
+  CrashReportReportTool* report_tool_;  // weak
   const std::map<std::string, std::string>* process_annotations_;  // weak
   const UserStreamDataSources* user_stream_data_sources_;  // weak
 };
