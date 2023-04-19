@@ -200,7 +200,9 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
     for (int fd = 0; fd <= STDERR_FILENO; ++fd) {
       file_actions.AddInheritedFileDescriptor(fd);
     }
-    file_actions.AddInheritedFileDescriptor(preserve_fd);
+    if(preserve_fd >= 0) {
+      file_actions.AddInheritedFileDescriptor(preserve_fd);
+    }
 
     const posix_spawnattr_t* attr_p = attr.Get();
     const posix_spawn_file_actions_t* file_actions_p = file_actions.Get();
