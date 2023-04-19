@@ -4,7 +4,7 @@
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_APPLE)
-#include "util/posix/double_fork_and_exec.h"
+#include "util/posix/spawn_subprocess.h"
 #elif BUILDFLAG(IS_WIN)
 #include <sstream>
 
@@ -31,8 +31,8 @@ void RunTool(bool simulation,
   argv.push_back("--dump");
   argv.push_back(dump_path.value());
 
-  if (!DoubleForkAndExec(argv, nullptr, -1, false, nullptr)) {
-    LOG(ERROR) << "DoubleForkAndExec";
+  if (!SpawnSubprocess(argv, nullptr, -1, false, nullptr)) {
+    LOG(ERROR) << "SpawnSubprocess";
   }
 #elif BUILDFLAG(IS_WIN)
   STARTUPINFOW si;
