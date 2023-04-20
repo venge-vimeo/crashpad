@@ -31,7 +31,7 @@ void RunTool(bool simulation,
   argv.push_back("--dump");
   argv.push_back(dump_path.value());
 
-  if (!SpawnSubprocess(argv, nullptr, -1, false, nullptr)) {
+  if (!SpawnSubprocess(argv, nullptr, -1, true, nullptr)) {
     LOG(ERROR) << "SpawnSubprocess";
   }
 #elif BUILDFLAG(IS_WIN)
